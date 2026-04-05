@@ -25,6 +25,31 @@ import {
 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 
+// ⚠️ INSTRUCTIONS FOR LOCAL DEPLOYMENT:
+// Uncomment the line below in your local VS Code project before deploying:
+import { createClient } from '@supabase/supabase-js';
+
+// --- SUPABASE CLOUD CONNECTION ---
+// ⚠️ PASTE YOUR SUPABASE URL AND ANON KEY HERE ⚠️
+const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co'; // Example: 'https://your-project.supabase.co'
+const supabaseKey = 'sb_publishable_svX65W-3IXNDpGmn4JYBig_-JOGE8kV'; // Example: 'eyJhbGciOiJIUzI1Ni...'
+
+// Safely initialize. 
+const getSupabaseClient = () => {
+    try {
+        if (typeof createClient !== 'undefined') {
+            return createClient(supabaseUrl, supabaseKey);
+        }
+    } catch (e) {}
+    return null;
+};
+
+const supabase = (supabaseUrl && supabaseKey) ? getSupabaseClient() : null;
+
+if (!supabase) {
+  console.warn("Cloud Storage Offline: Missing Supabase URL or Key, or import is commented out. Running in local session mode.");
+}
+
 // --- CUSTOM THEME CONSTANTS (Coffee White / iOS Style) ---
 const theme = {
   bg: 'bg-[#F9F8F6]', // Soft off-white / milk
@@ -193,7 +218,7 @@ function ProfileCard({ ownerName, profileImage, setProfileImage }) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result);
+        setProfileImage(reader.result); // This now triggers cloud save via App component wrapper
       };
       reader.readAsDataURL(file);
     }
@@ -427,7 +452,7 @@ export default function App() {
   
   // Login State
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginStatus, setLoginStatus] = useState(null); // 'granted' | 'denied' | null
+  const [loginStatus, setLoginStatus] = useState(null); 
   const [showPassword, setShowPassword] = useState(false);
 
   // Dashboard Data State
@@ -463,6 +488,44 @@ export default function App() {
     return { totalSpent: spent, totalIncome: income, currentBalance: current };
   }, [transactions, settings.initialBalance]);
 
+  // Load Data from Supabase when Authenticated
+  useEffect(() => {
+    if (isAuthenticated && supabase) {
+      const fetchData = async () => {
+        try {
+          // Fetch Settings
+          const { data: settingsData, error: settingsError } = await supabase
+            .from('user_settings')
+            .select('*')
+            .eq('id', 1)
+            .single();
+
+          if (settingsData) {
+            setSettings({ ownerName: settingsData.ownerName, initialBalance: settingsData.initialBalance });
+            if (settingsData.profileImage) setProfileImage(settingsData.profileImage);
+          } else {
+            // Create default settings if it's a completely blank database
+            await supabase.from('user_settings').insert([{ id: 1, ownerName: 'S A N · D E P T', initialBalance: 0 }]);
+          }
+
+          // Fetch Transactions
+          const { data: txData, error: txError } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('timestamp', { ascending: false });
+
+          if (txData) {
+            setTransactions(txData);
+          }
+        } catch (error) {
+          console.error("Error fetching from Supabase:", error);
+        }
+      };
+      fetchData();
+    }
+  }, [isAuthenticated]);
+
+
   // Handle 5-second Loading Timer
   useEffect(() => {
     if (isAppLoading) {
@@ -488,7 +551,7 @@ export default function App() {
   // Handle User Login
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginStatus === 'granted') return; // Prevent double click while authenticating
+    if (loginStatus === 'granted') return; 
 
     // Using Base64 obfuscation for "San.dept87" so password is not plainly visible
     if (btoa(loginPassword) === 'U2FuLmRlcHQ4Nw==') {
@@ -497,7 +560,7 @@ export default function App() {
         setIsAuthenticated(true);
         setLoginPassword('');
         setLoginStatus(null);
-      }, 1000); // Wait 1 second to show the success message
+      }, 1000);
     } else {
       setLoginStatus('denied');
     }
@@ -536,8 +599,10 @@ export default function App() {
     }
   };
 
+  // --- SUPABASE DATA WRAPPERS ---
+
   // Handle Transactions
-  const handleAddTransaction = (transaction) => {
+  const handleAddTransaction = async (transaction) => {
     const newTx = {
       ...transaction,
       id: crypto.randomUUID(),
@@ -545,16 +610,30 @@ export default function App() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now()
     };
+    
+    // Update local UI instantly
     setTransactions([newTx, ...transactions]);
     handleTabChange('dashboard');
+
+    // Save to Cloud
+    if (supabase) {
+      await supabase.from('transactions').insert([newTx]);
+    }
   };
 
-  const handleDeleteTransaction = (id) => {
+  const handleDeleteTransaction = async (id) => {
+    // Update local UI instantly
     setTransactions(transactions.filter(t => t.id !== id));
+    
+    // Delete from Cloud
+    if (supabase) {
+      await supabase.from('transactions').delete().eq('id', id);
+    }
   };
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (deletePassword === 'San.dept') {
+      // Clear Local State
       setTransactions([]);
       setSettings({ ownerName: 'S A N · D E P T', initialBalance: 0 });
       setProfileImage(null);
@@ -562,8 +641,35 @@ export default function App() {
       setDeletePassword('');
       setDeleteError('');
       handleTabChange('dashboard');
+
+      // Clear Cloud State
+      if (supabase) {
+        // Delete all transactions (by finding records where ID is not blank)
+        await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000'); 
+        
+        // Reset Settings
+        await supabase.from('user_settings').update({ 
+          ownerName: 'S A N · D E P T', 
+          initialBalance: 0, 
+          profileImage: null 
+        }).eq('id', 1);
+      }
     } else {
       setDeleteError('Incorrect password.');
+    }
+  };
+
+  const updateSettingsWrapper = async (newSettings) => {
+    setSettings(newSettings);
+    if (supabase) {
+      await supabase.from('user_settings').upsert([{ id: 1, ...newSettings }]);
+    }
+  };
+
+  const updateProfileImageWrapper = async (newImage) => {
+    setProfileImage(newImage);
+    if (supabase) {
+      await supabase.from('user_settings').update({ profileImage: newImage }).eq('id', 1);
     }
   };
 
@@ -716,7 +822,7 @@ export default function App() {
                       totalSpent={totalSpent} 
                       totalIncome={totalIncome} 
                       profileImage={profileImage}
-                      setProfileImage={setProfileImage}
+                      setProfileImage={updateProfileImageWrapper}
                     />
                   )}
                   {activeTab === 'history' && (
@@ -731,7 +837,7 @@ export default function App() {
                   {activeTab === 'settings' && (
                     <SettingsTab 
                       settings={settings} 
-                      setSettings={setSettings}
+                      setSettings={updateSettingsWrapper}
                       currentBalance={currentBalance}
                       totalIncome={totalIncome}
                       totalSpent={totalSpent}
