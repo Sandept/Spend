@@ -20,19 +20,21 @@ import {
   LogOut,
   Camera,
   User,
-  Eye,
+  Eye,  
   EyeOff
 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 
 // ⚠️ INSTRUCTIONS FOR LOCAL DEPLOYMENT:
 // Uncomment the line below in your local VS Code project before deploying:
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
 
 // --- SUPABASE CLOUD CONNECTION ---
 // ⚠️ PASTE YOUR SUPABASE URL AND ANON KEY HERE ⚠️
-const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co'; // Example: 'https://your-project.supabase.co'
-const supabaseKey = 'sb_publishable_svX65W-3IXNDpGmn4JYBig_-JOGE8kV'; // Example: 'eyJhbGciOiJIUzI1Ni...'
+const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co'; // Your URL is correct!
+
+// ✅ THIS IS THE CORRECT KEY!
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5enlkamZlbmRlbWJtdG5xd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ1MjEsImV4cCI6MjA5MDkzMDUyMX0.8BHQ6EjwzUfPn3Y45xtZsKOBm5Sxd_ez_TlXFpKCCcE'; 
 
 // Safely initialize. 
 const getSupabaseClient = () => {
@@ -500,6 +502,10 @@ export default function App() {
             .eq('id', 1)
             .single();
 
+          if (settingsError && settingsError.code !== 'PGRST116') {
+             console.error("Cloud Load Settings Error:", settingsError.message);
+          }
+
           if (settingsData) {
             setSettings({ ownerName: settingsData.ownerName, initialBalance: settingsData.initialBalance });
             if (settingsData.profileImage) setProfileImage(settingsData.profileImage);
@@ -513,6 +519,10 @@ export default function App() {
             .from('transactions')
             .select('*')
             .order('timestamp', { ascending: false });
+
+          if (txError) {
+             console.error("Cloud Load Transactions Error:", txError.message);
+          }
 
           if (txData) {
             setTransactions(txData);
@@ -617,7 +627,10 @@ export default function App() {
 
     // Save to Cloud
     if (supabase) {
-      await supabase.from('transactions').insert([newTx]);
+      const { error } = await supabase.from('transactions').insert([newTx]);
+      if (error) console.error("Cloud Save Error:", error.message);
+    } else {
+      console.log("Saved locally (Cloud not connected)");
     }
   };
 
@@ -627,7 +640,8 @@ export default function App() {
     
     // Delete from Cloud
     if (supabase) {
-      await supabase.from('transactions').delete().eq('id', id);
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      if (error) console.error("Cloud Delete Error:", error.message);
     }
   };
 
@@ -645,14 +659,16 @@ export default function App() {
       // Clear Cloud State
       if (supabase) {
         // Delete all transactions (by finding records where ID is not blank)
-        await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000'); 
+        const { error: txError } = await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000'); 
+        if (txError) console.error("Cloud Clear Error:", txError.message);
         
         // Reset Settings
-        await supabase.from('user_settings').update({ 
+        const { error: settingsError } = await supabase.from('user_settings').update({ 
           ownerName: 'S A N · D E P T', 
           initialBalance: 0, 
           profileImage: null 
         }).eq('id', 1);
+        if (settingsError) console.error("Cloud Settings Reset Error:", settingsError.message);
       }
     } else {
       setDeleteError('Incorrect password.');
@@ -662,14 +678,16 @@ export default function App() {
   const updateSettingsWrapper = async (newSettings) => {
     setSettings(newSettings);
     if (supabase) {
-      await supabase.from('user_settings').upsert([{ id: 1, ...newSettings }]);
+      const { error } = await supabase.from('user_settings').upsert([{ id: 1, ...newSettings }]);
+      if (error) console.error("Cloud Update Settings Error:", error.message);
     }
   };
 
   const updateProfileImageWrapper = async (newImage) => {
     setProfileImage(newImage);
     if (supabase) {
-      await supabase.from('user_settings').update({ profileImage: newImage }).eq('id', 1);
+      const { error } = await supabase.from('user_settings').update({ profileImage: newImage }).eq('id', 1);
+      if (error) console.error("Cloud Update Image Error:", error.message);
     }
   };
 
