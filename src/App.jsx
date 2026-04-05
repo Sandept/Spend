@@ -249,163 +249,172 @@ function ProfileCard({ ownerName, profileImage, setProfileImage }) {
 // --- GLOBAL STYLES COMPONENT ---
 function GlobalStyles() {
   return (
-    <style dangerouslySetInnerHTML={{__html: `
-      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
-      :root {
-        --shape-color-01: #A67B5B;
-        --shape-color-02: #3E2723;
-        --shape-color-03: #6D8C70;
-      }
-      html, body {
-        height: 100%;
-        overflow: hidden; /* Locks body to behave like a native app */
-        overscroll-behavior-y: none; /* Prevents mobile pull-to-refresh */
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        font-family: "Montserrat", sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        background-color: #F9F8F6;
-      }
-      .hide-scrollbar::-webkit-scrollbar { display: none; }
-      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <style dangerouslySetInnerHTML={{__html: `
+        :root {
+          --shape-color-01: #A67B5B;
+          --shape-color-02: #3E2723;
+          --shape-color-03: #6D8C70;
+        }
 
-      /* Uiverse Burst Animation CSS */
-      .burst-container {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .burst-container svg {
-        position: absolute;
-        top: -50px;
-        left: -50px;
-        width: 100px;
-        height: 100px;
-        opacity: 0;
-      }
-      .spin-burst svg {
-        animation: pop-burst 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      }
-      .spin-burst svg:nth-child(1) { --tx: 0px; --ty: -75px; --scale: 1.1; animation-delay: 0s; }
-      .spin-burst svg:nth-child(2) { --tx: 55px; --ty: -55px; --scale: 0.8; animation-delay: 0.05s; }
-      .spin-burst svg:nth-child(3) { --tx: 75px; --ty: 0px; --scale: 1.3; animation-delay: 0s; }
-      .spin-burst svg:nth-child(4) { --tx: 55px; --ty: 55px; --scale: 0.9; animation-delay: 0.1s; }
-      .spin-burst svg:nth-child(5) { --tx: 0px; --ty: 75px; --scale: 1.2; animation-delay: 0.05s; }
-      .spin-burst svg:nth-child(6) { --tx: -55px; --ty: 55px; --scale: 0.7; animation-delay: 0s; }
-      .spin-burst svg:nth-child(7) { --tx: -75px; --ty: 0px; --scale: 1.1; animation-delay: 0.1s; }
-      .spin-burst svg:nth-child(8) { --tx: -55px; --ty: -55px; --scale: 1.4; animation-delay: 0.05s; }
-      .spin-burst svg:nth-child(9) { --tx: -30px; --ty: -85px; --scale: 0.8; animation-delay: 0s; }
+        /* FORCE ALL ELEMENTS TO USE MONTSERRAT */
+        html, body, * {
+          font-family: "Montserrat", sans-serif !important;
+        }
 
-      @keyframes pop-burst {
-        0% { opacity: 1; transform: translate(0, 0) scale(0) rotate(0deg); }
-        40% { opacity: 1; }
-        100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(var(--scale)) rotate(180deg); }
-      }
+        html, body {
+          height: 100%;
+          overflow: hidden; /* Locks body to behave like a native app */
+          overscroll-behavior-y: none; /* Prevents mobile pull-to-refresh */
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          background-color: #F9F8F6;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* Uiverse Payment Method Radial Menu */
-      .pm-container { position: relative; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; margin: 0 auto; z-index: 10; }
-      .pm-checkbox { position: absolute; width: 60px; height: 60px; opacity: 0; z-index: 20; cursor: pointer; }
-      .pm-button-menu {
-        position: absolute; z-index: 10;
-        background-color: #FFFFFF; border: 2px solid #EAE6DF; color: #3E2723;
-        width: 60px; height: 60px; border-radius: 50%;
-        display: flex; justify-content: center; align-items: center;
-        box-shadow: 0px 4px 15px rgba(62, 39, 35, 0.1);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      }
-      .pm-option {
-        position: absolute; background-color: #F9F8F6; border: 2px solid #EAE6DF; color: #8D6E63;
-        z-index: 1; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;
-        display: flex; justify-content: center; align-items: center;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0px 3px 10px rgba(62, 39, 35, 0.05);
-        opacity: 0; scale: 0.5; pointer-events: none;
-      }
-      .pm-checkbox:hover ~ .pm-button-menu, .pm-checkbox:checked ~ .pm-button-menu {
-        background-color: #3E2723; color: #FFFFFF; border-color: #3E2723; scale: 0.95;
-      }
-      .pm-checkbox:checked ~ .pm-option { opacity: 1; scale: 1; pointer-events: auto; }
-      .pm-option:hover { background-color: #A67B5B; color: #FFFFFF; border-color: #A67B5B; scale: 1.1; }
-      .pm-checkbox:checked ~ .pm-option-a { transition-delay: 0.05s; transform: translate(-70px, -35px); }
-      .pm-checkbox:checked ~ .pm-option-b { transition-delay: 0.15s; transform: translate(0px, -85px); }
-      .pm-checkbox:checked ~ .pm-option-c { transition-delay: 0.25s; transform: translate(70px, -35px); }
-      .pm-icon-rotate { transition: transform 0.3s ease; }
-      .pm-checkbox:checked ~ .pm-button-menu .pm-icon-rotate { transform: rotate(180deg) scale(0.8); }
+        /* Uiverse Burst Animation CSS */
+        .burst-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .burst-container svg {
+          position: absolute;
+          top: -50px;
+          left: -50px;
+          width: 100px;
+          height: 100px;
+          opacity: 0;
+        }
+        .spin-burst svg {
+          animation: pop-burst 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .spin-burst svg:nth-child(1) { --tx: 0px; --ty: -75px; --scale: 1.1; animation-delay: 0s; }
+        .spin-burst svg:nth-child(2) { --tx: 55px; --ty: -55px; --scale: 0.8; animation-delay: 0.05s; }
+        .spin-burst svg:nth-child(3) { --tx: 75px; --ty: 0px; --scale: 1.3; animation-delay: 0s; }
+        .spin-burst svg:nth-child(4) { --tx: 55px; --ty: 55px; --scale: 0.9; animation-delay: 0.1s; }
+        .spin-burst svg:nth-child(5) { --tx: 0px; --ty: 75px; --scale: 1.2; animation-delay: 0.05s; }
+        .spin-burst svg:nth-child(6) { --tx: -55px; --ty: 55px; --scale: 0.7; animation-delay: 0s; }
+        .spin-burst svg:nth-child(7) { --tx: -75px; --ty: 0px; --scale: 1.1; animation-delay: 0.1s; }
+        .spin-burst svg:nth-child(8) { --tx: -55px; --ty: -55px; --scale: 1.4; animation-delay: 0.05s; }
+        .spin-burst svg:nth-child(9) { --tx: -30px; --ty: -85px; --scale: 0.8; animation-delay: 0s; }
 
-      /* Uiverse Profile Portfolio Card CSS */
-      .ui-card {
-        --font-color: #3E2723;
-        --font-color-sub: #8D6E63;
-        --bg-color: #FFFFFF;
-        --main-color: #A67B5B;
-        width: 260px;
-        height: 290px;
-        background: var(--bg-color);
-        border: 3px solid var(--main-color);
-        box-shadow: 7px 7px 0px var(--main-color);
-        border-radius: 8px; /* Straight rectangle style */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-        padding: 20px 0;
-        transition: all 0.3s ease;
-      }
-      .ui-card-photo-wrapper { width: 110px; height: 110px; position: relative; margin-bottom: 15px; }
-      .ui-card-title { text-align: center; color: var(--font-color); font-size: 28px; font-weight: 700; letter-spacing: -0.5px; font-family: "Montserrat", sans-serif; margin-top: 10px; line-height: 1.1; }
-      .ui-card-title span { display: block; font-size: 10px; color: var(--font-color-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.35em; margin-top: 8px; }
-      .ui-card-socials { display: flex; height: 0; opacity: 0; margin-top: 15px; gap: 20px; transition: 0.5s; }
-      .ui-card-socials-btn { width: 25px; height: 25px; border: none; background: transparent; cursor: pointer; }
-      .ui-card-socials-btn svg { width: 100%; height: 100%; fill: var(--main-color); }
-      .ui-card:hover > .ui-card-socials { opacity: 1; height: 35px; }
-      .ui-card-socials-btn:hover { transform: translateY(-5px); transition: all 0.15s; }
+        @keyframes pop-burst {
+          0% { opacity: 1; transform: translate(0, 0) scale(0) rotate(0deg); }
+          40% { opacity: 1; }
+          100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(var(--scale)) rotate(180deg); }
+        }
 
-      /* Uiverse Login Form CSS */
-      .form-container {
-        width: 100%;
-        background-color: #FFFFFF;
-        padding: 40px 30px;
-        font-size: 14px;
-        color: #3E2723;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        box-sizing: border-box;
-        border-radius: 24px;
-        border: 1px solid #EAE6DF;
-        box-shadow: 0px 10px 30px rgba(62, 39, 35, 0.08);
-      }
-      .form-container button:active { scale: 0.95; }
-      .form-container .logo-container { text-align: center; font-weight: 800; font-size: 32px; letter-spacing: -1px; }
-      .form-container .form { display: flex; flex-direction: column; }
-      .form-container .form-group { display: flex; flex-direction: column; gap: 6px; }
-      .form-container .form-group label { display: block; margin-bottom: 5px; font-weight: 700; color: #8D6E63; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-      .form-container .form-group input {
-        width: 100%; padding: 16px 45px 16px 16px; border-radius: 12px; font-family: inherit;
-        border: 2px solid #EAE6DF; background-color: #F9F8F6; color: #3E2723; font-weight: 600;
-        transition: all 0.2s ease;
-      }
-      .form-container .form-group input::placeholder { opacity: 0.4; font-weight: 500; }
-      .form-container .form-group input:focus { outline: none; border-color: #A67B5B; background-color: #FFFFFF; box-shadow: 0 0 0 4px rgba(166, 123, 91, 0.1); }
-      .form-container .form-submit-btn {
-        display: flex; justify-content: center; align-items: center; color: #fff;
-        background-color: #3E2723; border: none; width: 100%; padding: 16px; gap: 8px;
-        margin: 24px 0 12px 0; cursor: pointer; border-radius: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
-        transition: all 0.2s ease; box-shadow: 0 8px 20px rgba(62, 39, 35, 0.15);
-      }
-      .form-container .form-submit-btn:hover { background-color: #A67B5B; transform: translateY(-2px); box-shadow: 0 12px 25px rgba(166, 123, 91, 0.25); }
+        /* Uiverse Payment Method Radial Menu */
+        .pm-container { position: relative; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; margin: 0 auto; z-index: 10; }
+        .pm-checkbox { position: absolute; width: 60px; height: 60px; opacity: 0; z-index: 20; cursor: pointer; }
+        .pm-button-menu {
+          position: absolute; z-index: 10;
+          background-color: #FFFFFF; border: 2px solid #EAE6DF; color: #3E2723;
+          width: 60px; height: 60px; border-radius: 50%;
+          display: flex; justify-content: center; align-items: center;
+          box-shadow: 0px 4px 15px rgba(62, 39, 35, 0.1);
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .pm-option {
+          position: absolute; background-color: #F9F8F6; border: 2px solid #EAE6DF; color: #8D6E63;
+          z-index: 1; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;
+          display: flex; justify-content: center; align-items: center;
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          box-shadow: 0px 3px 10px rgba(62, 39, 35, 0.05);
+          opacity: 0; scale: 0.5; pointer-events: none;
+        }
+        .pm-checkbox:hover ~ .pm-button-menu, .pm-checkbox:checked ~ .pm-button-menu {
+          background-color: #3E2723; color: #FFFFFF; border-color: #3E2723; scale: 0.95;
+        }
+        .pm-checkbox:checked ~ .pm-option { opacity: 1; scale: 1; pointer-events: auto; }
+        .pm-option:hover { background-color: #A67B5B; color: #FFFFFF; border-color: #A67B5B; scale: 1.1; }
+        .pm-checkbox:checked ~ .pm-option-a { transition-delay: 0.05s; transform: translate(-70px, -35px); }
+        .pm-checkbox:checked ~ .pm-option-b { transition-delay: 0.15s; transform: translate(0px, -85px); }
+        .pm-checkbox:checked ~ .pm-option-c { transition-delay: 0.25s; transform: translate(70px, -35px); }
+        .pm-icon-rotate { transition: transform 0.3s ease; }
+        .pm-checkbox:checked ~ .pm-button-menu .pm-icon-rotate { transform: rotate(180deg) scale(0.8); }
 
-      @keyframes shrink { from { width: 100%; } to { width: 0%; } }
-      @keyframes grow { from { width: 0%; } to { width: 100%; } }
-    `}} />
+        /* Uiverse Profile Portfolio Card CSS */
+        .ui-card {
+          --font-color: #3E2723;
+          --font-color-sub: #8D6E63;
+          --bg-color: #FFFFFF;
+          --main-color: #A67B5B;
+          width: 260px;
+          height: 290px;
+          background: var(--bg-color);
+          border: 3px solid var(--main-color);
+          box-shadow: 7px 7px 0px var(--main-color);
+          border-radius: 8px; /* Straight rectangle style */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto;
+          padding: 20px 0;
+          transition: all 0.3s ease;
+        }
+        .ui-card-photo-wrapper { width: 110px; height: 110px; position: relative; margin-bottom: 15px; }
+        .ui-card-title { text-align: center; color: var(--font-color); font-size: 28px; font-weight: 700; letter-spacing: -0.5px; font-family: "Montserrat", sans-serif !important; margin-top: 10px; line-height: 1.1; }
+        .ui-card-title span { display: block; font-size: 10px; color: var(--font-color-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.35em; margin-top: 8px; }
+        .ui-card-socials { display: flex; height: 0; opacity: 0; margin-top: 15px; gap: 20px; transition: 0.5s; }
+        .ui-card-socials-btn { width: 25px; height: 25px; border: none; background: transparent; cursor: pointer; }
+        .ui-card-socials-btn svg { width: 100%; height: 100%; fill: var(--main-color); }
+        .ui-card:hover > .ui-card-socials { opacity: 1; height: 35px; }
+        .ui-card-socials-btn:hover { transform: translateY(-5px); transition: all 0.15s; }
+
+        /* Uiverse Login Form CSS */
+        .form-container {
+          width: 100%;
+          background-color: #FFFFFF;
+          padding: 40px 30px;
+          font-size: 14px;
+          color: #3E2723;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          box-sizing: border-box;
+          border-radius: 24px;
+          border: 1px solid #EAE6DF;
+          box-shadow: 0px 10px 30px rgba(62, 39, 35, 0.08);
+        }
+        .form-container button:active { scale: 0.95; }
+        .form-container .logo-container { text-align: center; font-weight: 800; font-size: 32px; letter-spacing: -1px; }
+        .form-container .form { display: flex; flex-direction: column; }
+        .form-container .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-container .form-group label { display: block; margin-bottom: 5px; font-weight: 700; color: #8D6E63; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+        .form-container .form-group input {
+          width: 100%; padding: 16px 45px 16px 16px; border-radius: 12px; font-family: inherit;
+          border: 2px solid #EAE6DF; background-color: #F9F8F6; color: #3E2723; font-weight: 600;
+          transition: all 0.2s ease;
+        }
+        .form-container .form-group input::placeholder { opacity: 0.4; font-weight: 500; }
+        .form-container .form-group input:focus { outline: none; border-color: #A67B5B; background-color: #FFFFFF; box-shadow: 0 0 0 4px rgba(166, 123, 91, 0.1); }
+        .form-container .form-submit-btn {
+          display: flex; justify-content: center; align-items: center; color: #fff;
+          background-color: #3E2723; border: none; width: 100%; padding: 16px; gap: 8px;
+          margin: 24px 0 12px 0; cursor: pointer; border-radius: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;
+          transition: all 0.2s ease; box-shadow: 0 8px 20px rgba(62, 39, 35, 0.15);
+        }
+        .form-container .form-submit-btn:hover { background-color: #A67B5B; transform: translateY(-2px); box-shadow: 0 12px 25px rgba(166, 123, 91, 0.25); }
+
+        @keyframes shrink { from { width: 100%; } to { width: 0%; } }
+        @keyframes grow { from { width: 0%; } to { width: 100%; } }
+      `}} />
+    </>
   );
 }
 
