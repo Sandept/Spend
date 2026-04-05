@@ -25,31 +25,23 @@ import {
 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 
+// --- ACTIVE SUPABASE IMPORT ---
 // ⚠️ INSTRUCTIONS FOR LOCAL DEPLOYMENT:
 // Uncomment the line below in your local VS Code project before deploying:
 // import { createClient } from '@supabase/supabase-js';
 
 // --- SUPABASE CLOUD CONNECTION ---
-// ⚠️ PASTE YOUR SUPABASE URL AND ANON KEY HERE ⚠️
-const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co'; // Your URL is correct!
+const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co'; // Your correct URL
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5enlkamZlbmRlbWJtdG5xd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ1MjEsImV4cCI6MjA5MDkzMDUyMX0.8BHQ6EjwzUfPn3Y45xtZsKOBm5Sxd_ez_TlXFpKCCcE'; // Your correct Key
 
-// ✅ THIS IS THE CORRECT KEY!
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5enlkamZlbmRlbWJtdG5xd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ1MjEsImV4cCI6MjA5MDkzMDUyMX0.8BHQ6EjwzUfPn3Y45xtZsKOBm5Sxd_ez_TlXFpKCCcE'; 
-
-// Safely initialize. 
-const getSupabaseClient = () => {
-    try {
-        if (typeof createClient !== 'undefined') {
-            return createClient(supabaseUrl, supabaseKey);
-        }
-    } catch (e) {}
-    return null;
-};
-
-const supabase = (supabaseUrl && supabaseKey) ? getSupabaseClient() : null;
-
-if (!supabase) {
-  console.warn("Cloud Storage Offline: Missing Supabase URL or Key, or import is commented out. Running in local session mode.");
+// Initialize Supabase Client directly (Safely)
+let supabase = null;
+try {
+  if (typeof createClient !== 'undefined') {
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+} catch (error) {
+  console.warn("Supabase client not loaded.");
 }
 
 // --- CUSTOM THEME CONSTANTS (Coffee White / iOS Style) ---
