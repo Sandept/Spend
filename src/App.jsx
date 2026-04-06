@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import { 
   Home, 
   History, 
@@ -25,24 +25,15 @@ import {
 } from 'lucide-react';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 
-// --- ACTIVE SUPABASE IMPORT ---
-// ⚠️ INSTRUCTIONS FOR LOCAL DEPLOYMENT:
-// Uncomment the line below in your local VS Code project before deploying:
-// import { createClient } from '@supabase/supabase-js';
+// --- SUPABASE IMPORT ---
+import { createClient } from '@supabase/supabase-js';
 
 // --- SUPABASE CLOUD CONNECTION ---
-const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co'; // Your correct URL
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5enlkamZlbmRlbWJtdG5xd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ1MjEsImV4cCI6MjA5MDkzMDUyMX0.8BHQ6EjwzUfPn3Y45xtZsKOBm5Sxd_ez_TlXFpKCCcE'; // Your correct Key
+const supabaseUrl = 'https://dyzydjfendembmtnqwyn.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5enlkamZlbmRlbWJtdG5xd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ1MjEsImV4cCI6MjA5MDkzMDUyMX0.8BHQ6EjwzUfPn3Y45xtZsKOBm5Sxd_ez_TlXFpKCCcE';
 
-// Initialize Supabase Client directly (Safely)
-let supabase = null;
-try {
-  if (typeof createClient !== 'undefined') {
-    supabase = createClient(supabaseUrl, supabaseKey);
-  }
-} catch (error) {
-  console.warn("Supabase client not loaded.");
-}
+// Initialize Supabase Client
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- CUSTOM THEME CONSTANTS (Coffee White / iOS Style) ---
 const theme = {
@@ -266,7 +257,7 @@ function ProfileCard({ ownerName, profileImage, setProfileImage }) {
 }
 
 // --- GLOBAL STYLES COMPONENT ---
-function GlobalStyles() {
+const GlobalStyles = memo(function GlobalStyles() {
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -298,6 +289,25 @@ function GlobalStyles() {
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* GPU-accelerated layers for smooth compositing */
+        .gpu-layer {
+          transform: translateZ(0);
+          will-change: transform;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+        }
+        .scroll-container {
+          -webkit-overflow-scrolling: touch;
+          transform: translateZ(0);
+        }
+        /* Reduce paint areas with containment */
+        .contain-layout {
+          contain: layout style;
+        }
+        .contain-strict {
+          contain: strict;
+        }
 
         /* Uiverse Burst Animation CSS */
         .burst-container {
@@ -435,7 +445,7 @@ function GlobalStyles() {
       `}} />
     </>
   );
-}
+});
 
 // --- MAIN APPLICATION COMPONENT ---
 export default function App() {
@@ -461,9 +471,9 @@ export default function App() {
   });
   const [profileImage, setProfileImage] = useState(null);
 
-  // Touch & Modal State
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
+  // Touch & Modal State — use refs for touch to avoid re-renders during swipe
+  const touchStartRef = useRef(null);
+  const touchEndRef = useRef(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
@@ -569,37 +579,47 @@ export default function App() {
   };
 
   // Tab Navigation Handler
-  const handleTabChange = (newTab) => {
-    const currentIndex = TABS.indexOf(activeTab);
-    const newIndex = TABS.indexOf(newTab);
-    if (currentIndex !== newIndex) {
-      setDirection(newIndex > currentIndex ? 1 : -1);
-      setActiveTab(newTab);
-    }
-  };
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(prev => {
+      const currentIndex = TABS.indexOf(prev);
+      const newIndex = TABS.indexOf(newTab);
+      if (currentIndex !== newIndex) {
+        setDirection(newIndex > currentIndex ? 1 : -1);
+        return newTab;
+      }
+      return prev;
+    });
+  }, []);
 
-  // Swipe Handlers
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-  const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+  // Swipe Handlers — using refs to avoid re-renders on every touch pixel
+  const onTouchStart = useCallback((e) => {
+    touchEndRef.current = null;
+    touchStartRef.current = e.targetTouches[0].clientX;
+  }, []);
+  const onTouchMove = useCallback((e) => {
+    touchEndRef.current = e.targetTouches[0].clientX;
+  }, []);
+  const onTouchEnd = useCallback(() => {
+    if (!touchStartRef.current || !touchEndRef.current) return;
+    const distance = touchStartRef.current - touchEndRef.current;
     const minSwipeDistance = 50;
 
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe || isRightSwipe) {
-      const currentIndex = TABS.indexOf(activeTab);
-      if (isLeftSwipe && currentIndex < TABS.length - 1) handleTabChange(TABS[currentIndex + 1]);
-      if (isRightSwipe && currentIndex > 0) handleTabChange(TABS[currentIndex - 1]);
+      setActiveTab(prev => {
+        const currentIndex = TABS.indexOf(prev);
+        let nextTab = prev;
+        if (isLeftSwipe && currentIndex < TABS.length - 1) nextTab = TABS[currentIndex + 1];
+        if (isRightSwipe && currentIndex > 0) nextTab = TABS[currentIndex - 1];
+        if (nextTab !== prev) {
+          setDirection(TABS.indexOf(nextTab) > currentIndex ? 1 : -1);
+        }
+        return nextTab;
+      });
     }
-  };
+  }, []);
 
   // --- SUPABASE DATA WRAPPERS ---
 
@@ -806,7 +826,7 @@ export default function App() {
           >
             {/* Tab Content */}
             <div 
-              className="flex-1 overflow-x-hidden overflow-y-auto hide-scrollbar relative z-0"
+              className="flex-1 overflow-x-hidden overflow-y-auto hide-scrollbar relative z-0 scroll-container"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -816,14 +836,14 @@ export default function App() {
                   key={activeTab}
                   custom={direction}
                   variants={{
-                    initial: (dir) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
-                    animate: { x: 0, opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
-                    exit: (dir) => ({ x: dir > 0 ? -40 : 40, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } })
+                    initial: (dir) => ({ x: dir > 0 ? 30 : -30, opacity: 0 }),
+                    animate: { x: 0, opacity: 1, transition: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] } },
+                    exit: (dir) => ({ x: dir > 0 ? -30 : 30, opacity: 0, transition: { duration: 0.15, ease: [0.25, 0.1, 0.25, 1] } })
                   }}
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  className="p-6 pb-32 min-h-full"
+                  className="p-6 pb-32 min-h-full gpu-layer"
                 >
                   {activeTab === 'dashboard' && (
                     <Dashboard 
@@ -860,10 +880,10 @@ export default function App() {
             </div>
 
             {/* Bottom Fade-Out Mask (Hides content scrolling under the Nav) */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F9F8F6] via-[#F9F8F6]/90 to-transparent z-30 pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F9F8F6] via-[#F9F8F6]/90 to-transparent z-30 pointer-events-none gpu-layer"></div>
 
             {/* Bottom Navigation */}
-            <nav className="absolute bottom-6 left-4 right-4 bg-white/90 backdrop-blur-xl border border-[#EAE6DF] rounded-[2rem] shadow-[0_10px_40px_rgba(62,39,35,0.12)] z-40">
+            <nav className="absolute bottom-6 left-4 right-4 bg-white/95 backdrop-blur-md border border-[#EAE6DF] rounded-[2rem] shadow-[0_10px_40px_rgba(62,39,35,0.12)] z-40 gpu-layer contain-layout">
               <div className="flex justify-around items-center px-1 py-2.5">
                 <NavItem isActive={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')}>
                   <LoaderPinwheelIcon isActive={activeTab === 'dashboard'} size={26} />
@@ -876,9 +896,9 @@ export default function App() {
                 <div className="relative -top-7 flex flex-col items-center">
                   <div className="relative cursor-pointer" onClick={handleSpinClick}>
                     <button 
-                      className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-colors active:scale-95 ${
+                      className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-colors duration-150 active:scale-95 ${
                         activeTab === 'spin' ? theme.accent : 'bg-[#3E2723]'
-                      } text-white ring-4 ring-[#F9F8F6]`}
+                      } text-white ring-4 ring-[#F9F8F6] gpu-layer`}
                     >
                       <PlusCircle size={28} className={`transition-transform duration-500 ${activeTab === 'spin' ? 'rotate-45' : ''}`} />
                     </button>
@@ -1003,20 +1023,20 @@ export default function App() {
 
 // --- SUBCOMPONENTS ---
 
-function NavItem({ isActive, onClick, children }) {
+const NavItem = memo(function NavItem({ isActive, onClick, children }) {
   return (
     <button 
       onClick={onClick} 
-      className={`flex flex-col items-center justify-center w-14 h-14 transition-colors ${isActive ? theme.accentText : theme.textSecondary}`}
+      className={`flex flex-col items-center justify-center w-14 h-14 transition-colors duration-150 ${isActive ? theme.accentText : theme.textSecondary}`}
     >
-      <div className={`transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>
+      <div className={`transition-transform duration-150 ${isActive ? 'scale-110' : 'scale-100'}`}>
         {children}
       </div>
     </button>
   );
-}
+});
 
-function Dashboard({ settings, currentBalance, totalSpent, totalIncome, profileImage, setProfileImage }) {
+const Dashboard = memo(function Dashboard({ settings, currentBalance, totalSpent, totalIncome, profileImage, setProfileImage }) {
   return (
     <div>
       <div className="mb-6">
@@ -1028,8 +1048,8 @@ function Dashboard({ settings, currentBalance, totalSpent, totalIncome, profileI
         <ProfileCard ownerName={settings.ownerName} profileImage={profileImage} setProfileImage={setProfileImage} />
       </div>
 
-      <div className={`${theme.textPrimary} bg-gradient-to-br from-[#FFFFFF] to-[#F5EFE6] rounded-3xl p-6 shadow-[0_8px_30px_rgb(62,39,35,0.06)] border border-white mb-2 relative overflow-hidden`}>
-        <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#A67B5B] opacity-5 rounded-full blur-2xl"></div>
+      <div className={`${theme.textPrimary} bg-gradient-to-br from-[#FFFFFF] to-[#F5EFE6] rounded-3xl p-6 shadow-[0_8px_30px_rgb(62,39,35,0.06)] border border-white mb-2 relative overflow-hidden contain-layout`}>
+        <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#A67B5B] opacity-5 rounded-full blur-2xl contain-strict"></div>
         
         <p className="text-sm font-medium text-[#8D6E63] mb-1">Total Balance</p>
         <h2 className="text-4xl font-extrabold tracking-tight mb-6">
@@ -1053,9 +1073,9 @@ function Dashboard({ settings, currentBalance, totalSpent, totalIncome, profileI
       </div>
     </div>
   );
-}
+});
 
-function HistoryTab({ transactions, onDelete }) {
+const HistoryTab = memo(function HistoryTab({ transactions, onDelete }) {
   const grouped = useMemo(() => {
     const groups = {};
     transactions.forEach(tx => {
@@ -1128,9 +1148,9 @@ function HistoryTab({ transactions, onDelete }) {
       )}
     </div>
   );
-}
+});
 
-function SpinTab({ onAdd }) {
+const SpinTab = memo(function SpinTab({ onAdd }) {
   const [type, setType] = useState('spend');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -1158,7 +1178,7 @@ function SpinTab({ onAdd }) {
 
   return (
     <div>
-      <h2 className={`text-2xl font-bold ${theme.textPrimary} mb-6 text-center`}>New Entry</h2>
+      <h2 className={`text-2xl font-bold ${theme.textPrimary} mb-6`}>New Entry</h2>
       
       <div className="bg-[#EAE6DF] p-1 rounded-xl flex mb-8 max-w-[240px] mx-auto">
         <button 
@@ -1275,9 +1295,9 @@ function SpinTab({ onAdd }) {
       <div className="text-center mt-4 text-[10px] text-[#A89F91]"></div>
     </div>
   );
-}
+});
 
-function AnalysisTab({ transactions, totalSpent }) {
+const AnalysisTab = memo(function AnalysisTab({ transactions, totalSpent }) {
   const categoryData = useMemo(() => {
     const data = {};
     transactions.filter(t => t.type === 'spend').forEach(tx => {
@@ -1322,7 +1342,7 @@ function AnalysisTab({ transactions, totalSpent }) {
               </div>
               <div className="w-full bg-[#F0EBE1] rounded-full h-2.5 overflow-hidden">
                 <div 
-                  className="bg-[#A67B5B] h-2.5 rounded-full transition-all duration-1000 ease-out" 
+                  className="bg-[#A67B5B] h-2.5 rounded-full transition-[width] duration-1000 ease-out" 
                   style={{ width: `${cat.percentage}%` }}
                 ></div>
               </div>
@@ -1333,9 +1353,9 @@ function AnalysisTab({ transactions, totalSpent }) {
       )}
     </div>
   );
-}
+});
 
-function SettingsTab({ settings, setSettings, currentBalance, totalIncome, totalSpent, onClearRequest, onExitRequest }) {
+const SettingsTab = memo(function SettingsTab({ settings, setSettings, currentBalance, totalIncome, totalSpent, onClearRequest, onExitRequest }) {
   const [manualBalance, setManualBalance] = useState('');
 
   const handleSaveBalance = () => {
@@ -1428,4 +1448,4 @@ function SettingsTab({ settings, setSettings, currentBalance, totalIncome, total
       </div>
     </div>
   );
-}
+});
