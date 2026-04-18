@@ -2,7 +2,7 @@
 <!-- Unique generated logo for "Spend" -->
 <img src="https://github.com/Sandept/Spend/blob/main/Spend.png" alt="Spend Logo" width="120" height="120" />
 
-# Spend
+# SPEND
 
 Track your expenses, know your habits, and take control of your wallet.
 
