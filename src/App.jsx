@@ -730,7 +730,7 @@ export default function App() {
             
             <div className="flex flex-col items-center animate-in fade-in duration-700 mt-24">
               <h1 className="text-5xl font-bold tracking-tight text-[#3E2723] flex items-baseline">
-              Wault<span className="text-[#A67B5B] mx-1">
+              Wault<span className="text-[#A67B5B] mx-1">·</span>Trc
               </h1>
               <p className="text-[#8D6E63] text-xs font-bold uppercase tracking-[0.2em] mt-3 mb-10">Track · your · Expenses</p>
               
