@@ -471,6 +471,13 @@ export default function App() {
   });
   const [profileImage, setProfileImage] = useState(null);
 
+  // SpinTab (New Entry) form state — lifted up so values persist across tab switches
+  const [spinType, setSpinType] = useState('spend');
+  const [spinAmount, setSpinAmount] = useState('');
+  const [spinNote, setSpinNote] = useState('');
+  const [spinCategory, setSpinCategory] = useState('Food');
+  const [spinMethod, setSpinMethod] = useState('Gpay');
+
   // Touch & Modal State — use refs for touch to avoid re-renders during swipe
   const touchStartRef = useRef(null);
   const touchEndRef = useRef(null);
@@ -636,6 +643,10 @@ export default function App() {
     // Update local UI instantly
     setTransactions([newTx, ...transactions]);
     handleTabChange('dashboard');
+
+    // Reset SpinTab form after successful submission
+    setSpinAmount('');
+    setSpinNote('');
 
     // Save to Cloud
     if (supabase) {
@@ -859,7 +870,14 @@ export default function App() {
                     <HistoryTab transactions={transactions} onDelete={handleDeleteTransaction} />
                   )}
                   {activeTab === 'spin' && (
-                    <SpinTab onAdd={handleAddTransaction} />
+                    <SpinTab 
+                      onAdd={handleAddTransaction}
+                      type={spinType} setType={setSpinType}
+                      amount={spinAmount} setAmount={setSpinAmount}
+                      note={spinNote} setNote={setSpinNote}
+                      category={spinCategory} setCategory={setSpinCategory}
+                      method={spinMethod} setMethod={setSpinMethod}
+                    />
                   )}
                   {activeTab === 'analysis' && (
                     <AnalysisTab transactions={transactions} totalSpent={totalSpent} />
@@ -1150,12 +1168,7 @@ const HistoryTab = memo(function HistoryTab({ transactions, onDelete }) {
   );
 });
 
-const SpinTab = memo(function SpinTab({ onAdd }) {
-  const [type, setType] = useState('spend');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [category, setCategory] = useState('Food');
-  const [method, setMethod] = useState('Gpay');
+const SpinTab = memo(function SpinTab({ onAdd, type, setType, amount, setAmount, note, setNote, category, setCategory, method, setMethod }) {
   const [isPmMenuOpen, setIsPmMenuOpen] = useState(false);
 
   const categories = ['Food', 'Transport', 'Shop', 'Bills & Utilities', 'Others'];
@@ -1171,9 +1184,6 @@ const SpinTab = memo(function SpinTab({ onAdd }) {
       category: type === 'spend' ? category : null,
       method
     });
-    
-    setAmount('');
-    setNote('');
   };
 
   return (
